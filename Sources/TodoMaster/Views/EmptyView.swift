@@ -6,7 +6,7 @@ public final class EmptyView: UIView {
     
     @IBOutlet var label: UILabel! {
         didSet {
-            label.text = NSLocalizedString("It's all a big black nothing", comment: "")
+            label.text = NSLocalizedString("Your list is empty", comment: "")
             label.font = UIFont.preferredFont(forTextStyle: .largeTitle)
             label.textColor = .black
             label.numberOfLines = 0
