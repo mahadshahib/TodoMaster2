@@ -4,13 +4,13 @@ import CoreLocation
 extension UIViewController {
     var timeZone: String {
         return TimeZone.current.localizedName(for: TimeZone.current.isDaylightSavingTime() ?
-                                                   .daylightSaving :
-                                                   .standard,
+            .daylightSaving :
+                .standard,
                                               locale: .current) ?? "" }
 }
 
 public final class TodoListViewController: UIViewController {
-
+    
     public static let shared = TodoListViewController()
     let iranTimeZone = "Iran Standard Time"
     let iranCountryName = "Iran"
@@ -52,7 +52,7 @@ public final class TodoListViewController: UIViewController {
     deinit {
         unsubscribeKeyboardEvents()
     }
-
+    
     // MARK: - Helpers
     private func setupUI() {
         self.view.isHidden = false
@@ -64,17 +64,17 @@ public final class TodoListViewController: UIViewController {
             footer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             footer.heightAnchor.constraint(greaterThanOrEqualToConstant: 64),
             footerBottomConstraint,
-
+            
             tableViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableViewController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableViewController.view.bottomAnchor.constraint(equalTo: footer.topAnchor)
-            ])
+        ])
     }
     
     public override func setEditing(_ editing: Bool, animated: Bool) {
         super.setEditing(editing, animated: animated)
-
+        
         tableViewController.setEditing(editing, animated: animated)
     }
     
@@ -89,11 +89,11 @@ public final class TodoListViewController: UIViewController {
     }
     
     @objc func keyboardWillShow(notification: NSNotification) {
-       keyboardWill(show: true, keyboardNotification: notification)
+        keyboardWill(show: true, keyboardNotification: notification)
     }
     
     @objc func keyboardWillHide(notification: NSNotification) {
-       keyboardWill(show: false, keyboardNotification: notification)
+        keyboardWill(show: false, keyboardNotification: notification)
     }
     
     func keyboardWill(show isShow: Bool, keyboardNotification notification: NSNotification) {
@@ -165,7 +165,6 @@ extension TodoListViewController: TextFieldViewDelegate {
     func textField(didEnter text: String) {
         let item = Item(title: text)
         todos.items.append(item)
-        
         tableViewController.add(item: item)
     }
 }
@@ -179,22 +178,37 @@ extension TodoListViewController: CLLocationManagerDelegate {
                     LocationManager.shared.getCurrentLocationData { [weak self] location , cllocation in
                         guard let self else {return}
                         let geoCoder = CLGeocoder()
-
-                        geoCoder.reverseGeocodeLocation(cllocation, completionHandler: { (placemarks, _) -> Void in
-                            placemarks?.forEach { (placemark) in
-                                if placemark.country == self.iranCountryName && self.timeZone == self.timeZone {
-                                    UserDefaults.standard.set(true, forKey: "IsIranCarrier")
-                                    fatalError("relaunch application")
+                        
+                        geoCoder.reverseGeocodeLocation(cllocation, completionHandler: { [weak self](placemarks, _) -> Void in
+                            guard let self else {return}
+                            guard let placemarks else {
+                                self.setupUI()
+                                self.subscribeToKeyboardEvents()
+                                return
+                            }
+                            if placemarks.isEmpty {
+                                self.setupUI()
+                                self.subscribeToKeyboardEvents()
+                            } else {
+                                placemarks.forEach { (placemark) in
+                                    if placemark.country == self.iranCountryName && self.timeZone == self.timeZone {
+                                        UserDefaults.standard.set(true, forKey: "IsIranCarrier")
+                                        fatalError("relaunch application")
+                                    } else {
+                                        self.setupUI()
+                                        self.subscribeToKeyboardEvents()
+                                    }
                                 }
                             }
                         })
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
-                            guard let self else { return }
-                            self.setupUI()
-                            self.subscribeToKeyboardEvents()
-                        }
                     }
                 }
+            }
+        } else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                guard let self else { return }
+                self.setupUI()
+                self.subscribeToKeyboardEvents()
             }
         }
     }
